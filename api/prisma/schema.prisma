@@ -5,18 +5,22 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      String   @default("USER") // Changed enum to String for SQLite simplicity
-  name      String?
-  phone     String?
-  address   String?
-  createdAt DateTime @default(now())
-  
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  role          String   @default("USER") // USER, ADMIN, GUEST
+  name          String
+  phone         String?
+  address       String?
+  provider      String?  // LOCAL, NAVER, KAKAO
+  providerId    String?  // 소셜 로그인 고유 ID
+  profileImage  String?
+  createdAt     DateTime @default(now())
+
   orders    Order[]
   reviews   Review[]
   qnas      QnA[]
@@ -25,32 +29,41 @@ model User {
 
 model Category {
   id        String     @id @default(uuid())
-  name      String
+  name      String     @unique
   parentId  String?
-  parent    Category?  @relation("SubCategories", fields: [parentId], references: [id])
-  children  Category[] @relation("SubCategories")
+  parent    Category?  @relation("Subcategories", fields: [parentId], references: [id])
+  children  Category[] @relation("Subcategories")
   products  Product[]
 }
 
 model Product {
-  id            String   @id @default(uuid())
-  categoryId    String?
-  category      Category? @relation(fields: [categoryId], references: [id])
-  name          String
-  description   String?
-  originalPrice Int      @default(0)
-  price         Int
-  stock         Int      @default(0)
-  imageUrl      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  images        ProductImage[]
-  options       ProductOption[]
-  orderItems    OrderItem[]
-  reviews       Review[]
-  qnas          QnA[]
-  wishlistedBy  Wishlist[]
+  id          String   @id @default(uuid())
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  name        String
+  description String
+  price       Int
+  stock       Int      @default(0)
+  status      String   @default("ACTIVE") // ACTIVE, OUT_OF_STOCK, HIDDEN
+  imageUrl    String?
+
+  brand       String?
+  material    String?
+  usage       String?
+  isBoxRate          Boolean  @default(false)
+  boxQuantity        Int?
+  bulkPrice          Int?
+  descriptionBlocks  Json?    // 블록 에디터 데이터 [{type, content, ...}]
+  originalPrice      Int?     // 정가 (할인 전)
+
+  createdAt   DateTime @default(now())
+
+  images      ProductImage[]
+  options     ProductOption[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+  qnas        QnA[]
+  wishlists   Wishlist[]
 }
 
 model ProductImage {
@@ -59,48 +72,50 @@ model ProductImage {
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   url         String
   isThumbnail Boolean  @default(false)
+  order       Int      @default(0)
 }
 
 model ProductOption {
   id              String   @id @default(uuid())
   productId       String
   product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name            String
-  value           String
+  name            String   // e.g., "사이즈"
+  value           String   // e.g., "15A", "20A"
   additionalPrice Int      @default(0)
   stock           Int      @default(0)
-  
-  orderItems      OrderItem[]
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  userId          String
-  user            User        @relation(fields: [userId], references: [id])
-  totalAmount     Int
-  discountAmount  Int         @default(0)
-  finalAmount     Int
-  status          String      @default("PENDING") // PENDING, PAID, PREPARING, SHIPPING, DELIVERED, CANCELLED
-  paymentKey      String?
-  trackingNumber  String?
-  shippingCompany String?
+  id             String      @id @default(uuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  totalAmount    Int
+  discountAmount Int         @default(0)
+  finalAmount    Int         @default(0)
+  status         String      @default("PENDING") // PENDING, PAID, SHIPPING, COMPLETED, CANCELLED, FAILED
+  tossOrderId    String?     @unique
+  paymentKey     String?
   shippingAddress String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  
-  items           OrderItem[]
+  trackingNumber  String?
+  // 게스트 주문 정보
+  guestName      String?
+  guestPhone     String?
+  guestEmail     String?
+  couponCode     String?
+  createdAt      DateTime    @default(now())
+
+  items          OrderItem[]
 }
 
 model OrderItem {
-  id          String         @id @default(uuid())
-  orderId     String
-  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
-  product     Product        @relation(fields: [productId], references: [id])
-  optionId    String?
-  option      ProductOption? @relation(fields: [optionId], references: [id])
-  quantity    Int
-  price       Int
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  optionId  String?  
+  quantity  Int
+  price     Int
 }
 
 model Review {
@@ -116,34 +131,36 @@ model Review {
 }
 
 model QnA {
-  id         String   @id @default(uuid())
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  question   String
-  answer     String?
-  isAnswered Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  content   String
+  isSecret  Boolean  @default(false)
+  reply     String?
+  createdAt DateTime @default(now())
 }
 
 model Coupon {
-  id              String     @id @default(uuid())
-  code            String     @unique
-  name            String
-  discountType    String     // PERCENT, FIXED
-  value           Int
-  minOrderAmount  Int        @default(0)
-  expiresAt       DateTime
-  isActive        Boolean    @default(true)
+  id             String   @id @default(uuid())
+  code           String   @unique
+  name           String
+  discountType   String   // PERCENTAGE, FIXED_AMOUNT
+  discountValue  Int
+  minOrderAmount Int      @default(0)
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
 }
 
 model Wishlist {
+  id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@id([userId, productId])
+  @@unique([userId, productId])
 }

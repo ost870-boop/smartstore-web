@@ -21,6 +21,22 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     }
 };
 
+export const optionalAuthenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+        next();
+        return;
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey') as any;
+        req.user = decoded;
+        next();
+    } catch (e) {
+        next();
+    }
+};
+
 export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (req.user?.role !== 'ADMIN') {
         res.status(403).json({ message: 'Require Admin role' });

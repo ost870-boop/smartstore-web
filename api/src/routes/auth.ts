@@ -6,14 +6,14 @@ import jwt from 'jsonwebtoken';
 const router = Router();
 
 router.post('/register', async (req, res) => {
-    const { email, password, role } = req.body;
+    const { email, password, role, name } = req.body;
     try {
         const existing = await prisma.user.findUnique({ where: { email } });
         if (existing) return res.status(400).json({ message: 'Email already in use' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
-            data: { email, password: hashedPassword, role: role || 'USER' }
+            data: { email, password: hashedPassword, role: role || 'USER', name: name || '고객' }
         });
         
         res.status(201).json({ message: 'User created' });

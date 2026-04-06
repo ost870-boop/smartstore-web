@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 async function getProduct(id: string) {
   try {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+    const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
     const res = await fetch(`${API_URL}/api/products/${id}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();

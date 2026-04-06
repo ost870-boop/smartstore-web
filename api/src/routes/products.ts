@@ -7,11 +7,14 @@ const router = Router();
 // Get all products with filters and sorting
 router.get('/', async (req, res) => {
     try {
-        const { categoryId, search, minPrice, maxPrice, sort } = req.query;
+        const { categoryId, search, minPrice, maxPrice, sort, brand, material, usage } = req.query;
         
         const where: any = {};
         if (categoryId) where.categoryId = String(categoryId);
         if (search) where.name = { contains: String(search) };
+        if (brand) where.brand = String(brand);
+        if (material) where.material = String(material);
+        if (usage) where.usage = String(usage);
         if (minPrice || maxPrice) {
             where.price = {};
             if (minPrice) where.price.gte = Number(minPrice);
@@ -27,8 +30,9 @@ router.get('/', async (req, res) => {
             where,
             orderBy,
             include: {
-                images: { where: { isThumbnail: true } },
+                images: { orderBy: { order: 'asc' } },
                 category: true,
+                reviews: { select: { rating: true } },
                 _count: { select: { reviews: true } }
             }
         });
@@ -68,27 +72,54 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Create product (Admin only)
+// 허용 필드 화이트리스트 (스키마에 없는 필드 차단)
+function pickProductFields(body: any) {
+    const allowed = ['name', 'description', 'price', 'stock', 'status', 'imageUrl', 'categoryId',
+        'brand', 'material', 'usage', 'isBoxRate', 'boxQuantity', 'bulkPrice',
+        'descriptionBlocks', 'originalPrice'];
+    const data: any = {};
+    for (const key of allowed) {
+        if (body[key] !== undefined) data[key] = body[key];
+    }
+    return data;
+}
+
 router.post('/', authenticate, requireAdmin, async (req, res) => {
     try {
-        const product = await prisma.product.create({
-            data: req.body
-        });
+        const data = pickProductFields(req.body);
+        const { imagesText } = req.body;
+        if (imagesText) {
+            const urls = imagesText.split(',').map((u: string) => u.trim()).filter(Boolean);
+            if (urls.length > 0) {
+                data.images = { create: urls.map((url: string, order: number) => ({ url, order })) };
+            }
+        }
+        const product = await prisma.product.create({ data });
         res.status(201).json(product);
     } catch (error) {
+        console.error('[Product Create]', error);
         res.status(400).json({ error: 'Failed to create product' });
     }
 });
 
-// Update product (Admin only)
 router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     try {
+        const data = pickProductFields(req.body);
+        const { imagesText } = req.body;
+        if (imagesText !== undefined) {
+            const urls = imagesText.split(',').map((u: string) => u.trim()).filter(Boolean);
+            data.images = {
+                deleteMany: {},
+                create: urls.map((url: string, order: number) => ({ url, order }))
+            };
+        }
         const product = await prisma.product.update({
-            where: { id: req.params.id },
-            data: req.body
+            where: { id: String(req.params.id) },
+            data
         });
         res.json(product);
     } catch (error) {
+        console.error('[Product Update]', error);
         res.status(400).json({ error: 'Failed to update' });
     }
 });
@@ -97,7 +128,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
 router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
     try {
         await prisma.product.delete({
-            where: { id: req.params.id }
+            where: { id: String(req.params.id) }
         });
         res.status(204).send();
     } catch (error) {

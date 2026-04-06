@@ -3,127 +3,117 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-const generateBaseProducts = () => {
-    const defaultImg = (text: string) => `https://placehold.co/400x400/f3f4f6/6b7280?text=${encodeURIComponent(text)}`;
-    
-    return [
-        { name: 'pvc 임시 메꾸라 15A 플러그 임시마개', description: 'pvc 임시 메꾸라 15A. 파이프 끝단 임시 마감용으로 사용됩니다. 가볍고 내구성이 좋습니다.', originalPrice: 500, price: 200, stock: 1000, imageUrl: defaultImg('PVC 메꾸라 15A') },
-        { name: '철 단니플 20A 백관 단닛블 단니쁠', description: '천단니플 20A. 배관 연결에 사용되는 고강도 철제 니플입니다.', originalPrice: 500, price: 340, stock: 1000, imageUrl: defaultImg('철 단니플 20A') },
-        { name: '동 부싱 20X15A 붓싱 신주 수도 부속 연결', description: '동 부싱 20X15A. 서로 다른 규격의 배관을 안전하게 연결합니다.', originalPrice: 1000, price: 740, stock: 1000, imageUrl: defaultImg('동 부싱 20X15A') },
-        { name: 'PB 에이콘 슬리브 15A', description: 'PB 에이콘 슬리브 15A 구KS. 누수 없는 완벽한 체결을 보장합니다.', originalPrice: 200, price: 70, stock: 1000, imageUrl: defaultImg('PB 에이콘 15A') },
-        { name: '철 단조 메꾸라 15A 백관 수도 배관 자재 부속 마개 플러그', description: '단단한 철 단조 소재로 제작된 메꾸라 마개입니다.', originalPrice: 400, price: 220, stock: 1000, imageUrl: defaultImg('철 단조 15A') },
-        { name: '동 부싱 15X8A 붓싱 신주 수도 부속 연결', description: '황동 재질로 제작되어 부식에 강합니다.', originalPrice: 800, price: 530, stock: 1000, imageUrl: defaultImg('동 부싱 15X8A') },
-        { name: '테프론 테이프 수입 12mmX10M', description: '누수 방지의 필수품. 최고급 수입산 테프론 테이프.', originalPrice: 300, price: 90, stock: 5000, imageUrl: defaultImg('테프론 테이프') },
-        { name: '철 단니플 15A 백관 단닛블 단니쁠', description: '배관 연결 기본 부속품 단니플.', originalPrice: 300, price: 230, stock: 1000, imageUrl: defaultImg('철 단니플 15A') },
-        { name: '스텐 주름관 속발소 15A F 밸브 소켓 발보', description: '스텐 주름관 전용 고급 밸브 소켓입니다.', originalPrice: 2000, price: 1390, stock: 800, imageUrl: defaultImg('주름관 속발소 15A') },
-        { name: '신주 동 메꾸라 8A 플러그 마개 수도 배관 자재 부속', description: '부식에 뛰어난 신주 동 메꾸라 마개.', originalPrice: 500, price: 270, stock: 1000, imageUrl: defaultImg('동 메꾸라 8A') },
-        { name: '나비 밸브 50A 수도용 밸브', description: '고급 수전형 나비 밸브. 개폐가 부드럽고 수명이 깁니다.', originalPrice: 20000, price: 15000, stock: 100, imageUrl: defaultImg('나비 밸브 50A') },
-        { name: '수도미터기 15A 건식 계량기', description: '정확한 유량 측정을 위한 온수/냉수 겸용 15A 계량기', originalPrice: 25000, price: 18000, stock: 100, imageUrl: defaultImg('수도미터기 15A') }
-    ];
-};
+const productsList = [
+    { name: 'KSD3583 탄소강관 백관 파이프 6M', brand: '현대제철', material: '주철(백관)', usage: '소방/수도', price: 45000, catName: '배관자재' },
+    { name: '스텐(STS304) 나사식 90도 엘보', brand: '성일하이텍', material: '스텐(STS)', usage: '수도/위생', price: 3200, catName: '부속품' },
+    { name: '동관 (Type L) 직관 6M', brand: '능원금속', material: '동(Copper)', usage: '급수/급탕', price: 55000, catName: '배관자재' },
+    { name: '황동(신주) 나사식 스윙 체크밸브', brand: '효성테크', material: '황동(신주)', usage: '수도/난방', price: 18000, catName: '밸브류' },
+    { name: '버터플라이 밸브 (웨이퍼형, 기어식)', brand: '삼진밸브', material: '주철', usage: '산업/공조', price: 125000, catName: '밸브류' },
+    { name: 'K-PVC 이중벽관 (하수관) 4M', brand: '동아화스너', material: 'PVC', usage: '배수/하수', price: 28000, catName: '배관자재' },
+    { name: '스텐(STS304) 플랜지 10K (슬립온)', brand: '성일하이텍', material: '스텐(STS)', usage: '플랜트/수도', price: 15000, catName: '부속품' },
+    { name: 'PB(폴리부틸렌) 파이프 롤 100M', brand: '애경화학', material: 'PB', usage: '수도/난방', price: 85000, catName: '배관자재' },
+    { name: '청동 볼밸브 (풀보어) 나사식', brand: '효성테크', material: '청동', usage: '급수/급탕', price: 24000, catName: '밸브류' },
+    { name: '주철(백관) 이경 티(Tee) 나사식', brand: '영남메탈', material: '주철(백관)', usage: '소방/수도', price: 6500, catName: '부속품' },
+
+    { name: '가교화폴리에틸렌(XL) 파이프 롤', brand: '동양화학', material: 'XL(PE-Xa)', usage: '난방용', price: 62000, catName: '배관자재' },
+    { name: '게이트 밸브 (안나사형, 10K)', brand: '신진기계', material: '주철', usage: '급수/소방', price: 89000, catName: '밸브류' },
+    { name: '황동(신주) 속발소 (주름관/PB 공용)', brand: '동아크레도', material: '황동(신주)', usage: '수도용', price: 2500, catName: '부속품' },
+    { name: '원터치 배수트랩 (바닥용)', brand: '대림바스', material: '스텐/ABS', usage: '위생/하수', price: 12000, catName: '수전/도기' },
+    { name: '세면기용 수전 (원홀 혼합수전)', brand: '아메리칸스탠다드', material: '황동/크롬', usage: '위생/수도', price: 45000, catName: '수전/도기' },
+    { name: '수도미터기 (건식, 나사식)', brand: '한국수도계량기', material: '동합금', usage: '급수/검침', price: 35000, catName: '공구/기타' },
+    { name: '압력계 (부르동관식, 오일입)', brand: '우진계기', material: '스텐/황동', usage: '산업/공조', price: 18000, catName: '공구/기타' },
+    { name: '테프론 테이프 (100개입 박스)', brand: '제일테이프', material: 'PTFE', usage: '밀봉/기타', price: 25000, catName: '공구/기타' },
+    { name: 'PVC 본드 (경질염화비닐용) 1kg', brand: '오공', material: '접착제', usage: '접착/기타', price: 14000, catName: '공구/기타' },
+    { name: '배관용 보온재 (은박 발포고무) 2M', brand: '태화단열', material: '고무발포', usage: '보온/기타', price: 3800, catName: '공구/기타' },
+
+    { name: '스텐(STS316) 용접용 레듀샤 (동심)', brand: '성일하이텍', material: '스텐(STS316)', usage: '화학/플랜트', price: 12000, catName: '부속품' },
+    { name: '황동 나비밸브 (나사식)', brand: '효성테크', material: '황동(신주)', usage: '수도/난방', price: 15500, catName: '밸브류' },
+    { name: '스텐(STS304) 유니온 (나사부속)', brand: '영남메탈', material: '스텐(STS)', usage: '수도/공조', price: 8500, catName: '부속품' },
+    { name: 'KSD3507 관단방식 조인트 (그루브)', brand: '한국조인트', material: '주철', usage: '소방용', price: 14000, catName: '부속품' },
+    { name: 'CPVC (소방용 합성수지관) 3M', brand: '동아화스너', material: 'CPVC', usage: '소방/스프링클러', price: 32000, catName: '배관자재' },
+    { name: '스텐 주름관 (물결관) 10M 롤', brand: '대성후렉시블', material: '스텐(STS)', usage: '급수/급탕', price: 48000, catName: '배관자재' },
+    { name: '디지털 온도계 (배관 삽입형)', brand: '우진계기', material: '스텐', usage: '산업/공조', price: 55000, catName: '공구/기타' },
+    { name: '자동 에어벤트 (공기빼기밸브)', brand: '삼진밸브', material: '황동(신주)', usage: '난방용', price: 15000, catName: '밸브류' },
+    { name: '소변기 세척밸브 (플러시밸브)', brand: '아메리칸스탠다드', material: '황동/크롬', usage: '위생/수도', price: 65000, catName: '수전/도기' },
+    { name: 'PE 수도관 (고밀도 폴리에틸렌) 롤', brand: '고려화학', material: 'HDPE', usage: '지중/수도', price: 120000, catName: '배관자재' },
+];
+
+const plumbingCategories = ['배관자재', '밸브류', '부속품', '수전/도기', '공구/기타'];
 
 async function main() {
-    console.log('Cleaning up existing database...');
+    console.log('Cleaning up existing B2B database...');
+    await prisma.wishlist.deleteMany();
+    await prisma.review.deleteMany();
+    await prisma.qnA.deleteMany();
     await prisma.orderItem.deleteMany();
     await prisma.order.deleteMany();
     await prisma.productOption.deleteMany();
     await prisma.productImage.deleteMany();
-    await prisma.review.deleteMany();
-    await prisma.qnA.deleteMany();
-    await prisma.wishlist.deleteMany();
     await prisma.product.deleteMany();
     await prisma.category.deleteMany();
     await prisma.coupon.deleteMany();
     await prisma.user.deleteMany();
 
-    console.log('Creating Admin & User...');
     const hashedPassword = await bcrypt.hash('admin123', 10);
     const admin = await prisma.user.create({
-        data: {
-            email: 'admin@chaeumsudo.com',
-            password: hashedPassword,
-            role: 'ADMIN',
-            name: '채움수도 관리자',
-            address: '서울특별시 금천구 디지털로 130'
-        }
+        data: { email: 'admin@chaeum.com', password: hashedPassword, role: 'ADMIN', name: '쇼핑몰관리자' }
     });
-
-    const userPw = await bcrypt.hash('user123', 10);
     const user = await prisma.user.create({
-        data: {
-            email: 'user@chaeumsudo.com',
-            password: userPw,
-            role: 'USER',
-            name: '김테스트',
-            address: '경기도 성남시 분당구 판교역로 1'
-        }
+        data: { email: 'user@test.com', password: hashedPassword, role: 'USER', name: '일반고객' }
     });
 
     console.log('Creating Categories...');
-    const catPipe = await prisma.category.create({ data: { name: '배관자재/파이프' } });
-    const catValve = await prisma.category.create({ data: { name: '밸브류' } });
-    const catMisc = await prisma.category.create({ data: { name: '테이프/기타' } });
+    const catMap: Record<string, string> = {};
+    for (const cat of plumbingCategories) {
+        const created = await prisma.category.create({ data: { name: cat } });
+        catMap[cat] = created.id;
+    }
 
-    console.log('Creating Products with Options...');
-    const rawProducts = generateBaseProducts();
-    for (let i = 0; i < rawProducts.length; i++) {
-        let categoryId = catMisc.id;
-        if (rawProducts[i].name.includes('밸브') || rawProducts[i].name.includes('계량기')) categoryId = catValve.id;
-        else if (rawProducts[i].name.includes('관') || rawProducts[i].name.includes('니플') || rawProducts[i].name.includes('메꾸라')) categoryId = catPipe.id;
-
-        const p = await prisma.product.create({
+    console.log('Creating 30 B2B Specialized Products...');
+    for (let i = 0; i < productsList.length; i++) {
+        const pData = productsList[i];
+        const isBoxRate = i % 4 === 0;
+        
+        const product = await prisma.product.create({
             data: {
-                ...rawProducts[i],
-                categoryId
+                categoryId: catMap[pData.catName],
+                name: pData.name,
+                description: `KS 인증 100% 당일 출고를 원칙으로 하는 ${pData.brand} 정품 자재입니다. 공사 현장 납품 시 추가 도매 할인을 문의해주세요.`,
+                price: pData.price,
+                stock: Math.floor(Math.random() * 500) + 50,
+                brand: pData.brand,
+                material: pData.material,
+                usage: pData.usage,
+                isBoxRate: isBoxRate,
+                boxQuantity: isBoxRate ? 50 : null,
+                bulkPrice: isBoxRate ? pData.price * 45 : null,
+                imageUrl: `https://fastly.picsum.photos/id/${(i % 10) + 160}/500/500.jpg?hmac=rand${i}`,
+                options: {
+                    create: [
+                        { name: '규격', value: '기본형', additionalPrice: 0, stock: 100 },
+                        { name: '규격', value: '1단계 상위', additionalPrice: Math.floor(pData.price * 0.2), stock: 100 },
+                    ]
+                }
             }
         });
 
-        // Add additional images
-        await prisma.productImage.create({
-            data: { productId: p.id, url: p.imageUrl!, isThumbnail: true }
-        });
-        await prisma.productImage.create({
-            data: { productId: p.id, url: `https://placehold.co/800x800/eeeeee/222222?text=Detail+Img+1`, isThumbnail: false }
-        });
-
-        // Add Options for certain products
-        if (p.name.includes('메꾸라') || p.name.includes('니플')) {
-            await prisma.productOption.create({
-                data: { productId: p.id, name: '크기', value: '15A (기본)', additionalPrice: 0, stock: 500 }
-            });
-            await prisma.productOption.create({
-                data: { productId: p.id, name: '크기', value: '20A', additionalPrice: 500, stock: 200 }
-            });
-            await prisma.productOption.create({
-                data: { productId: p.id, name: '크기', value: '25A', additionalPrice: 1200, stock: 100 }
-            });
-        }
-
-        // Add Reviews
-        if (i % 2 === 0) {
+        // Add Mock Reviews
+        const numReviews = (i % 3) + 1; // 1 to 3 reviews
+        for (let r = 0; r < numReviews; r++) {
             await prisma.review.create({
                 data: {
-                    productId: p.id,
+                    productId: product.id,
                     userId: user.id,
-                    rating: 5,
-                    content: '배송도 빠르고 품질도 너무 좋습니다. 다음 현장에서도 무조건 여기서 시킵니다.',
+                    content: r === 0 
+                        ? '대량 구매했는데 배송이 빠르고 현장에서 쓰기 좋습니다. 로트 불량도 없네요!' 
+                        : (r === 1 ? '단가가 기존 거래처보다 싸고 물건 상태가 괜찮습니다. 재구매 의사 있습니다.' : '포장이 꼼꼼해서 좋았습니다. 마감도 깔끔하네요.'),
+                    rating: r === 0 ? 5 : 4
                 }
             });
         }
     }
 
-    console.log('Creating Coupons...');
-    await prisma.coupon.create({
-        data: {
-            code: 'OPEN2024',
-            name: '오픈 기념 10% 할인 쿠폰',
-            discountType: 'PERCENT',
-            value: 10,
-            minOrderAmount: 10000,
-            expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-        }
-    });
-
-    console.log("Seeding completely finished with relational data!");
+    console.log('Seeding completely finished with B2B relational data!');
 }
-main().then(() => prisma.$disconnect()).catch(e => { console.error(e); prisma.$disconnect(); });
+
+main().catch(e => console.error(e)).finally(() => prisma.$disconnect());
