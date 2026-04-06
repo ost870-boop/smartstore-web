@@ -174,6 +174,12 @@ export default function HomePageContent({ initialProducts, initialCategories, pa
   // 최근 본 상품 (홈 표시용)
   const recentForHome = recentItems.slice(0, 4);
 
+  // 오늘의 특가 (재고 있고 박스할인 가장 큰 상품)
+  const todayDeal = [...initialProducts]
+    .filter(p => p.stock > 0 && getBoxDiscount(p))
+    .sort((a, b) => (getBoxDiscount(b) || 0) - (getBoxDiscount(a) || 0))
+    .slice(0, 4);
+
   const Section = ({ title, products, href }: { title: string; products: any[]; href?: string }) => (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-4">
@@ -308,6 +314,17 @@ export default function HomePageContent({ initialProducts, initialCategories, pa
               <p className="text-xs text-gray-400 mb-4">실제 구매자들이 검증한 상품입니다</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {reviewRichProducts.map(p => <ProductCard key={p.id} {...p} />)}
+              </div>
+            </section>
+          )}
+
+          {/* 오늘의 특가 */}
+          {todayDeal.length > 0 && (
+            <section className="mb-12 bg-red-50 rounded-2xl p-5 md:p-6 border border-red-100">
+              <h2 className="text-lg font-black text-red-600 mb-1">🔥 오늘의 특가</h2>
+              <p className="text-xs text-gray-400 mb-4">박스 구매 시 최대 할인 상품</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {todayDeal.map(p => <ProductCard key={p.id} {...p} />)}
               </div>
             </section>
           )}

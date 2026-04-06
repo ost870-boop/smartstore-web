@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import ChatWidget from '@/components/ChatWidget';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: '채움수도상사 | 배관자재 전문몰',
@@ -20,6 +21,7 @@ export default function RootLayout({
         <main className="w-full">
           {children}
         </main>
+        <Footer />
         <ChatWidget />
       </body>
     </html>
