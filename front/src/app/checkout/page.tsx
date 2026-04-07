@@ -41,7 +41,37 @@ export default function CheckoutPage() {
       return;
     }
     setPrice(getTotal());
-  }, [_hasHydrated, items, getTotal]);
+
+    // 로그인 사용자 정보 자동 입력
+    if (token) {
+      fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.ok ? res.json() : null)
+        .then(user => {
+          if (!user) return;
+          if (user.name) setOrdererName(user.name);
+          if (user.phone) setOrdererPhone(user.phone);
+          if (user.email) setOrdererEmail(user.email);
+          if (user.address) {
+            // 주소 파싱: "(12345) 서울시 강남구 테헤란로 123 상세주소"
+            const addrMatch = user.address.match(/^\((\d+)\)\s*(.+)$/);
+            if (addrMatch) {
+              setZonecode(addrMatch[1]);
+              const parts = addrMatch[2].split(/\s+/);
+              // 마지막 2단어를 상세주소로 추정 (동/호수 등)
+              if (parts.length > 3) {
+                setAddress(parts.slice(0, -2).join(' '));
+                setAddressDetail(parts.slice(-2).join(' '));
+              } else {
+                setAddress(addrMatch[2]);
+              }
+            } else {
+              setAddress(user.address);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [_hasHydrated, items, getTotal, token]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;

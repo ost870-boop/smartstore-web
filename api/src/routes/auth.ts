@@ -44,4 +44,23 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// GET /api/auth/me - 로그인된 사용자 정보 조회
+router.get('/me', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: '로그인이 필요합니다.' });
+
+    try {
+        const token = authHeader.replace('Bearer ', '');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey') as any;
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id },
+            select: { id: true, name: true, email: true, phone: true, address: true, role: true }
+        });
+        if (!user) return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        res.json(user);
+    } catch {
+        res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
+    }
+});
+
 export default router;
