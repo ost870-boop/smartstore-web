@@ -73,12 +73,21 @@ export default function Navbar() {
       <div className="bg-[#6b8af0] text-white">
         <div className="max-w-[1280px] mx-auto px-4 h-12 md:h-12 flex items-center justify-between">
           <div className="flex items-center gap-1.5 md:gap-3">
-            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white text-[#6b8af0] flex items-center justify-center font-bold text-xs overflow-hidden flex-shrink-0">
-               <div className="grid grid-cols-2 gap-0.5 p-0.5 md:p-1 w-full h-full">
-                  <div className="bg-[#6b8af0] opacity-80" />
-                  <div className="bg-[#6b8af0]" />
-                  <div className="col-span-2 bg-[#6b8af0] opacity-60" />
-               </div>
+            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 p-[4px] md:p-[5px]">
+               <svg viewBox="0 0 100 100" fill="#6b8af0" className="w-full h-full">
+                 <rect x="0" y="0" width="45" height="10" />
+                 <rect x="0" y="17" width="45" height="10" />
+                 <rect x="0" y="34" width="45" height="10" />
+                 <rect x="55" y="0" width="10" height="45" />
+                 <rect x="72" y="0" width="10" height="45" />
+                 <rect x="90" y="0" width="10" height="45" />
+                 <rect x="0" y="55" width="10" height="45" />
+                 <rect x="17" y="55" width="10" height="45" />
+                 <rect x="35" y="55" width="10" height="45" />
+                 <rect x="55" y="55" width="45" height="10" />
+                 <rect x="55" y="72" width="45" height="10" />
+                 <rect x="55" y="90" width="45" height="10" />
+               </svg>
             </div>
             <span className="text-[10px] md:text-xs font-medium opacity-90 truncate max-w-[150px] md:max-w-none">수도 배관 자재 전문. 설비 부속 판매</span>
             <span className="text-[10px] md:text-xs ml-1 md:ml-2 opacity-80 hidden sm:inline">| 관심고객수 4,780 ⓘ</span>
