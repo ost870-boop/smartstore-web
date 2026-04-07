@@ -1,10 +1,30 @@
 "use client";
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff, Check, Building2, User } from 'lucide-react';
 import AddressSearch from '@/components/AddressSearch';
 
 type MemberType = 'personal' | 'business';
+
+// Input을 컴포넌트 밖에 정의 → 리렌더 시 포커스 유지
+const FormInput = memo(({ label, value, error, type = 'text', placeholder, required = true, onChange }: {
+  label: string; value: string; error?: string; type?: string; placeholder?: string; required?: boolean; onChange: (v: string) => void;
+}) => (
+  <div>
+    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      type={type}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition text-sm bg-gray-50 focus:bg-white ${error ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'}`}
+    />
+    {error && <p className="text-red-500 text-xs mt-1 font-medium">{error}</p>}
+  </div>
+));
+FormInput.displayName = 'FormInput';
 
 export default function SignupPage() {
   const [step, setStep] = useState(1);
@@ -104,21 +124,7 @@ export default function SignupPage() {
   const pw = pwStrength(form.password);
   const allAgreed = agreements.terms && agreements.privacy && agreements.marketing && agreements.sms;
 
-  const Input = ({ label, field, type = 'text', placeholder, required = true }: { label: string; field: string; type?: string; placeholder?: string; required?: boolean }) => (
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        type={type}
-        value={(form as any)[field]}
-        onChange={e => set(field, e.target.value)}
-        placeholder={placeholder}
-        className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition text-sm bg-gray-50 focus:bg-white ${errors[field] ? 'border-red-400' : 'border-gray-200 focus:border-blue-500'}`}
-      />
-      {errors[field] && <p className="text-red-500 text-xs mt-1 font-medium">{errors[field]}</p>}
-    </div>
-  );
+  // FormInput은 컴포넌트 밖에 정의됨 → 포커스 유지됨
 
   return (
     <div className="max-w-lg mx-auto mt-8 mb-32 px-4">
@@ -179,8 +185,8 @@ export default function SignupPage() {
               {memberType === 'business' ? '사업자' : '개인'}회원 정보 입력
             </h2>
             <div className="space-y-4">
-              <Input label="이름" field="name" placeholder="홍길동" />
-              <Input label="이메일" field="email" type="email" placeholder="example@company.com" />
+              <FormInput label="이름" value={form.name} error={errors.name} placeholder="홍길동" onChange={v => set('name', v)} />
+              <FormInput label="이메일" value={form.email} error={errors.email} type="email" placeholder="example@company.com" onChange={v => set('email', v)} />
 
               {/* 비밀번호 */}
               <div>
@@ -231,7 +237,7 @@ export default function SignupPage() {
                 {errors.passwordConfirm && <p className="text-red-500 text-xs mt-1 font-medium">{errors.passwordConfirm}</p>}
               </div>
 
-              <Input label="휴대폰번호" field="phone" type="tel" placeholder="010-0000-0000" />
+              <FormInput label="휴대폰번호" value={form.phone} error={errors.phone} type="tel" placeholder="010-0000-0000" onChange={v => set('phone', v)} />
 
               {/* 배송 주소 */}
               <div className="border-t pt-4 mt-2">
@@ -251,9 +257,9 @@ export default function SignupPage() {
                 <div className="border-t pt-4 mt-4">
                   <p className="text-sm font-bold text-gray-700 mb-3">사업자 정보</p>
                   <div className="space-y-4">
-                    <Input label="회사명" field="company" placeholder="(주)채움건설" />
-                    <Input label="사업자등록번호" field="bizNumber" placeholder="000-00-00000" required={false} />
-                    <Input label="담당자명" field="manager" placeholder="구매 담당자" required={false} />
+                    <FormInput label="회사명" value={form.company} error={errors.company} placeholder="(주)채움건설" onChange={v => set('company', v)} />
+                    <FormInput label="사업자등록번호" value={form.bizNumber} error={errors.bizNumber} placeholder="000-00-00000" required={false} onChange={v => set('bizNumber', v)} />
+                    <FormInput label="담당자명" value={form.manager} error={errors.manager} placeholder="구매 담당자" required={false} onChange={v => set('manager', v)} />
                   </div>
                 </div>
               )}
