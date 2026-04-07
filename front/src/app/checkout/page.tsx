@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useCartStore } from '@/store/useCartStore';
 import Cookies from 'js-cookie';
 import { CreditCard, Smartphone, Building2, Loader2 } from 'lucide-react';
+import AddressSearch from '@/components/AddressSearch';
 
 const API = ''; // 상대경로 → Next.js rewrite → localhost:5000
 
@@ -19,7 +20,9 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const [zonecode, setZonecode] = useState('');
   const [address, setAddress] = useState('');
+  const [addressDetail, setAddressDetail] = useState('');
   const [ordererName, setOrdererName] = useState('');
   const [ordererPhone, setOrdererPhone] = useState('');
   const [ordererEmail, setOrdererEmail] = useState('');
@@ -81,7 +84,7 @@ export default function CheckoutPage() {
       // 1. 주문 생성
       const orderRes = await axios.post(`${API}/api/orders`, {
         items: items.map(i => ({ productId: i.productId, optionId: i.optionId, quantity: i.quantity })),
-        shippingAddress: address,
+        shippingAddress: [zonecode && `(${zonecode})`, address, addressDetail].filter(Boolean).join(' '),
         couponCode: couponApplied?.couponCode,
         paymentMethod,
         guestName: isGuest ? ordererName : undefined,
@@ -173,12 +176,13 @@ export default function CheckoutPage() {
             className="w-full p-3 md:p-4 border border-gray-300 rounded-xl outline-none focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors mb-4"
           />
         )}
-        <input
-          type="text"
-          value={address}
-          onChange={e => setAddress(e.target.value)}
-          placeholder="배송 받으실 상세주소 *"
-          className="w-full p-4 border border-gray-300 rounded-xl outline-none focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+        <AddressSearch
+          zonecode={zonecode}
+          address={address}
+          detail={addressDetail}
+          onZonecodeChange={setZonecode}
+          onAddressChange={setAddress}
+          onDetailChange={setAddressDetail}
         />
       </div>
 

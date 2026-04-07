@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff, Check, Building2, User } from 'lucide-react';
+import AddressSearch from '@/components/AddressSearch';
 
 type MemberType = 'personal' | 'business';
 
@@ -10,7 +11,7 @@ export default function SignupPage() {
   const [memberType, setMemberType] = useState<MemberType>('personal');
   const [form, setForm] = useState({
     name: '', email: '', password: '', passwordConfirm: '',
-    phone: '', address: '', addressDetail: '',
+    phone: '', zonecode: '', address: '', addressDetail: '',
     company: '', bizNumber: '', manager: '',
   });
   const [agreements, setAgreements] = useState({ terms: false, privacy: false, marketing: false, sms: false });
@@ -64,7 +65,7 @@ export default function SignupPage() {
           email: form.email,
           password: form.password,
           phone: form.phone,
-          address: [form.address, form.addressDetail].filter(Boolean).join(' ') || undefined,
+          address: [form.zonecode && `(${form.zonecode})`, form.address, form.addressDetail].filter(Boolean).join(' ') || undefined,
           role: 'USER',
         }),
       });
@@ -235,10 +236,14 @@ export default function SignupPage() {
               {/* 배송 주소 */}
               <div className="border-t pt-4 mt-2">
                 <p className="text-sm font-bold text-gray-700 mb-3">배송 주소 <span className="text-xs text-gray-400 font-normal">(주문 시 자동 입력됩니다)</span></p>
-                <div className="space-y-3">
-                  <Input label="주소" field="address" placeholder="서울시 강남구 테헤란로 123" required={false} />
-                  <Input label="상세주소" field="addressDetail" placeholder="OO빌딩 3층 301호" required={false} />
-                </div>
+                <AddressSearch
+                  zonecode={form.zonecode}
+                  address={form.address}
+                  detail={form.addressDetail}
+                  onZonecodeChange={v => set('zonecode', v)}
+                  onAddressChange={v => set('address', v)}
+                  onDetailChange={v => set('addressDetail', v)}
+                />
               </div>
 
               {/* 사업자 정보 */}
