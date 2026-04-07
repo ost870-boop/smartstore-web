@@ -85,8 +85,6 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4 md:gap-5 text-xs md:text-sm font-semibold">
-            <Link href="/" className="opacity-90 hover:opacity-100 hidden lg:inline">관심 스토어</Link>
-            <Link href="/" className="opacity-90 hover:opacity-100 hidden md:inline">마이페이지 ▾</Link>
             {isAdmin && <Link href="/admin" className="text-yellow-300">ADM</Link>}
             
             <Link href="/cart" className="opacity-90 hover:opacity-100 flex items-center gap-1">
