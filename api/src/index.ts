@@ -18,7 +18,7 @@ dotenv.config();
 const app = express();
 export const prisma = new PrismaClient();
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 // 업로드 이미지 정적 서빙

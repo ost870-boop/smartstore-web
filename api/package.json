@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.ts",
-    "tunnel": "cloudflared tunnel --url http://localhost:5000",
+    "start": "npx tsx src/index.ts",
+    "build": "npx prisma generate",
     "postinstall": "prisma generate"
   },
   "keywords": [],
