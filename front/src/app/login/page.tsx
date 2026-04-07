@@ -116,6 +116,10 @@ export default function LoginPage() {
         >
           {isLoading ? '로그인 중...' : '로그인'}
         </button>
+
+        <div className="text-center mt-4 text-sm text-gray-500">
+          아직 회원이 아니신가요? <a href="/signup" className="text-blue-600 font-bold underline">회원가입</a>
+        </div>
       </form>
 
       {/* 테스트 계정 안내 */}

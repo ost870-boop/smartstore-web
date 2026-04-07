@@ -6,19 +6,22 @@ import jwt from 'jsonwebtoken';
 const router = Router();
 
 router.post('/register', async (req, res) => {
-    const { email, password, role, name } = req.body;
+    const { email, password, role, name, phone } = req.body;
     try {
+        if (!email || !password || !name) {
+            return res.status(400).json({ message: '이름, 이메일, 비밀번호는 필수입니다.' });
+        }
         const existing = await prisma.user.findUnique({ where: { email } });
-        if (existing) return res.status(400).json({ message: 'Email already in use' });
+        if (existing) return res.status(400).json({ message: '이미 사용 중인 이메일입니다.' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
-            data: { email, password: hashedPassword, role: role || 'USER', name: name || '고객' }
+            data: { email, password: hashedPassword, role: role || 'USER', name, phone: phone || null, provider: 'LOCAL' }
         });
-        
-        res.status(201).json({ message: 'User created' });
+
+        res.status(201).json({ message: '회원가입이 완료되었습니다.', userId: user.id });
     } catch (error) {
-        res.status(400).json({ error: 'Registration failed' });
+        res.status(400).json({ message: '회원가입에 실패했습니다.' });
     }
 });
 
