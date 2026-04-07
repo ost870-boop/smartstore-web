@@ -161,34 +161,25 @@ export default function Navbar() {
           </button>
           
           <Link href="/" className="flex items-center md:absolute md:left-1/2 md:-translate-x-1/2 pt-1 md:pt-2">
-             <h1 className="text-2xl md:text-[44px] font-extrabold text-[#bad6ff] tracking-tighter flex items-center gap-2 md:gap-3">
-                {/* 로고 아이콘: 2x2 그리드 (가로줄+세로줄 패턴) */}
-                <span className="inline-grid grid-cols-2 gap-[3px] md:gap-[4px] w-[28px] h-[28px] md:w-[44px] md:h-[44px]">
+             <h1 className="text-2xl md:text-[44px] font-extrabold text-[#bad6ff] tracking-tighter flex items-center gap-1.5 md:gap-2.5">
+                <svg className="w-[26px] h-[26px] md:w-[42px] md:h-[42px]" viewBox="0 0 100 100" fill="#bad6ff">
                   {/* 좌상: 가로줄 3개 */}
-                  <span className="flex flex-col justify-between py-[2px] md:py-[3px]">
-                    <span className="w-full h-[2.5px] md:h-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="w-full h-[2.5px] md:h-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="w-full h-[2.5px] md:h-[4px] bg-[#bad6ff] rounded-sm" />
-                  </span>
+                  <rect x="0" y="0" width="45" height="10" />
+                  <rect x="0" y="17" width="45" height="10" />
+                  <rect x="0" y="34" width="45" height="10" />
                   {/* 우상: 세로줄 3개 */}
-                  <span className="flex flex-row justify-between px-[2px] md:px-[3px]">
-                    <span className="h-full w-[2.5px] md:w-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="h-full w-[2.5px] md:w-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="h-full w-[2.5px] md:w-[4px] bg-[#bad6ff] rounded-sm" />
-                  </span>
+                  <rect x="55" y="0" width="10" height="45" />
+                  <rect x="72" y="0" width="10" height="45" />
+                  <rect x="90" y="0" width="10" height="45" />
                   {/* 좌하: 세로줄 3개 */}
-                  <span className="flex flex-row justify-between px-[2px] md:px-[3px]">
-                    <span className="h-full w-[2.5px] md:w-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="h-full w-[2.5px] md:w-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="h-full w-[2.5px] md:w-[4px] bg-[#bad6ff] rounded-sm" />
-                  </span>
+                  <rect x="0" y="55" width="10" height="45" />
+                  <rect x="17" y="55" width="10" height="45" />
+                  <rect x="35" y="55" width="10" height="45" />
                   {/* 우하: 가로줄 3개 */}
-                  <span className="flex flex-col justify-between py-[2px] md:py-[3px]">
-                    <span className="w-full h-[2.5px] md:h-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="w-full h-[2.5px] md:h-[4px] bg-[#bad6ff] rounded-sm" />
-                    <span className="w-full h-[2.5px] md:h-[4px] bg-[#bad6ff] rounded-sm" />
-                  </span>
-                </span>
+                  <rect x="55" y="55" width="45" height="10" />
+                  <rect x="55" y="72" width="45" height="10" />
+                  <rect x="55" y="90" width="45" height="10" />
+                </svg>
                 채움수도
              </h1>
           </Link>
