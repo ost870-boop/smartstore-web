@@ -161,8 +161,11 @@ export default function Navbar() {
           </button>
           
           <Link href="/" className="flex items-center md:absolute md:left-1/2 md:-translate-x-1/2 pt-1 md:pt-2">
-             <h1 className="text-2xl md:text-[44px] font-extrabold text-[#bad6ff] tracking-tighter">
-                <span className="mr-1 relative -top-[1px] md:-top-[2px] text-xl md:text-[40px]">||||</span>채움수도
+             <h1 className="text-2xl md:text-[44px] font-extrabold text-[#bad6ff] tracking-tighter flex items-center">
+                <span className="mr-1.5 flex gap-[3px] md:gap-[4px] relative -top-[1px] md:-top-[2px]">
+                  {[1,2,3,4].map(i => <span key={i} className={`inline-block w-[3px] md:w-[4px] bg-[#bad6ff] rounded-sm ${i <= 2 ? 'h-[18px] md:h-[32px]' : 'h-[24px] md:h-[40px]'}`} />)}
+                </span>
+                채움수도
              </h1>
           </Link>
           
