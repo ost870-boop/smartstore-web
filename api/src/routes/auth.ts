@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 const router = Router();
 
 router.post('/register', async (req, res) => {
-    const { email, password, role, name, phone } = req.body;
+    const { email, password, role, name, phone, address } = req.body;
     try {
         if (!email || !password || !name) {
             return res.status(400).json({ message: '이름, 이메일, 비밀번호는 필수입니다.' });
@@ -16,7 +16,7 @@ router.post('/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
-            data: { email, password: hashedPassword, role: role || 'USER', name, phone: phone || null, provider: 'LOCAL' }
+            data: { email, password: hashedPassword, role: role || 'USER', name, phone: phone || null, address: address || null, provider: 'LOCAL' }
         });
 
         res.status(201).json({ message: '회원가입이 완료되었습니다.', userId: user.id });
