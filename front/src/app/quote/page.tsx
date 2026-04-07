@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { FileText, Phone, Mail, Building2, CheckCircle } from 'lucide-react';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+const API = ''; // 상대경로 → Next.js rewrite → localhost:5000
 
 export default function QuotePage() {
   const [form, setForm] = useState({

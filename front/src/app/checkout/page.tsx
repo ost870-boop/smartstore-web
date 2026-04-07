@@ -5,7 +5,7 @@ import { useCartStore } from '@/store/useCartStore';
 import Cookies from 'js-cookie';
 import { CreditCard, Smartphone, Building2, Loader2 } from 'lucide-react';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+const API = ''; // 상대경로 → Next.js rewrite → localhost:5000
 
 type PaymentMethod = 'card' | 'easy' | 'bank';
 

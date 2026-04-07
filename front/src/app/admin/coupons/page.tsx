@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+const API = ''; // 상대경로 → Next.js rewrite → localhost:5000
 
 interface Coupon {
   id: string;
