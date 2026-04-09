@@ -1,12 +1,9 @@
 "use client";
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useCartStore } from '@/store/useCartStore';
 import Cookies from 'js-cookie';
 import { CreditCard, Smartphone, Building2, Loader2 } from 'lucide-react';
 import AddressSearch from '@/components/AddressSearch';
-
-const API = ''; // 상대경로 → Next.js rewrite → localhost:5000
 
 type PaymentMethod = 'card' | 'easy' | 'bank';
 
@@ -78,18 +75,16 @@ export default function CheckoutPage() {
     setCouponLoading(true);
     try {
       const total = getTotal();
-      const res = await axios.get(`${API}/api/coupons/validate/${couponCode.trim().toUpperCase()}`, {
-        params: { amount: total }
-      });
-      const data = res.data;
+      const res = await fetch(`/api/coupons/validate/${couponCode.trim().toUpperCase()}?amount=${total}`);
+      const data = await res.json();
       if (data.valid) {
         setCouponApplied({ couponCode: data.couponCode, discountAmount: data.discountAmount });
         setPrice(total - data.discountAmount);
       } else {
         alert(data.message || '유효하지 않은 쿠폰입니다.');
       }
-    } catch (err: any) {
-      alert(err.response?.data?.message || '쿠폰 적용에 실패했습니다.');
+    } catch {
+      alert('쿠폰 적용에 실패했습니다.');
     } finally {
       setCouponLoading(false);
     }
@@ -108,21 +103,25 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      const headers: any = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
+      const hdrs: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) hdrs.Authorization = `Bearer ${token}`;
 
       // 1. 주문 생성
-      const orderRes = await axios.post(`${API}/api/orders`, {
-        items: items.map(i => ({ productId: i.productId, optionId: i.optionId, quantity: i.quantity })),
-        shippingAddress: [zonecode && `(${zonecode})`, address, addressDetail].filter(Boolean).join(' '),
-        couponCode: couponApplied?.couponCode,
-        paymentMethod,
-        guestName: isGuest ? ordererName : undefined,
-        guestPhone: isGuest ? ordererPhone : undefined,
-        guestEmail: isGuest ? (ordererEmail || undefined) : undefined,
-      }, { headers });
-
-      const { id: orderId } = orderRes.data;
+      const orderRes = await fetch('/api/orders', {
+        method: 'POST',
+        headers: hdrs,
+        body: JSON.stringify({
+          items: items.map(i => ({ productId: i.productId, optionId: i.optionId, quantity: i.quantity })),
+          shippingAddress: [zonecode && `(${zonecode})`, address, addressDetail].filter(Boolean).join(' '),
+          couponCode: couponApplied?.couponCode,
+          guestName: isGuest ? ordererName : undefined,
+          guestPhone: isGuest ? ordererPhone : undefined,
+          guestEmail: isGuest ? (ordererEmail || undefined) : undefined,
+        }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.error || '주문 생성 실패');
+      const orderId = orderData.id;
 
       // 2. 결제 처리
       if (paymentMethod === 'bank') {

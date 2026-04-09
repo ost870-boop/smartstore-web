@@ -4,9 +4,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PackageSearch, Users, ShoppingCart, MessageSquare, Ticket, Settings, LogOut, BarChart3 } from 'lucide-react';
 import Cookies from 'js-cookie';
+import { useEffect, useState } from 'react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const [authorized, setAuthorized] = useState(false);
+
+    useEffect(() => {
+        const token = Cookies.get('token');
+        const role = Cookies.get('role');
+        if (!token || role !== 'ADMIN') {
+            window.location.href = '/login?redirect=/admin';
+            return;
+        }
+        setAuthorized(true);
+    }, []);
+
+    if (!authorized) {
+        return <div className="flex items-center justify-center min-h-screen text-gray-400">권한 확인 중...</div>;
+    }
 
     const menu = [
         { label: '대시보드', path: '/admin', icon: <BarChart3 size={20} /> },
