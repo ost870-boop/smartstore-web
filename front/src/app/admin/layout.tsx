@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PackageSearch, Users, ShoppingCart, MessageSquare, Ticket, Settings, LogOut, BarChart3 } from 'lucide-react';
+import { PackageSearch, ShoppingCart, MessageSquare, Ticket, Settings, LogOut, BarChart3 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { useEffect, useState } from 'react';
 

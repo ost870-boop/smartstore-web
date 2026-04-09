@@ -147,7 +147,7 @@ model Coupon {
   id             String   @id @default(uuid())
   code           String   @unique
   name           String
-  discountType   String   // PERCENTAGE, FIXED_AMOUNT
+  discountType   String   // PERCENT, FIXED
   discountValue  Int
   minOrderAmount Int      @default(0)
   expiresAt      DateTime

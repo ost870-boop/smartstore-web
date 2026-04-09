@@ -10,7 +10,7 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
     const { items, couponCode, shippingAddress, guestName, guestPhone, guestEmail } = req.body;
 
     try {
-        let userId = req.user?.id;
+        let userId: string | undefined = req.user?.id;
         if (!userId) {
             // 게스트: 공유 게스트 계정 사용
             let guestUser = await prisma.user.findUnique({ where: { email: 'guest@smartstore.com' } });
@@ -19,7 +19,7 @@ router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =
                     data: { email: 'guest@smartstore.com', password: 'guest', role: 'GUEST', name: '비회원' }
                 });
             }
-            userId = Number(guestUser.id);
+            userId = guestUser.id;
         }
 
         let totalAmount = 0;
@@ -134,7 +134,7 @@ router.post('/:id/pay', optionalAuthenticate, async (req: AuthRequest, res: Resp
 });
 
 // POST /api/orders/confirm - 토스 결제 확인
-router.post('/confirm', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/confirm', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
     const { paymentKey, orderId, amount } = req.body;
 
     try {

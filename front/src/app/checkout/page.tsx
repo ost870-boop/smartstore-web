@@ -14,6 +14,7 @@ export default function CheckoutPage() {
 
   const _hasHydrated = useCartStore((state) => state._hasHydrated);
   const [price, setPrice] = useState(0);
+  const [shippingFee, setShippingFee] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -37,7 +38,10 @@ export default function CheckoutPage() {
       window.location.href = '/';
       return;
     }
-    setPrice(getTotal());
+    const total = getTotal();
+    const shipping = total >= 50000 ? 0 : 3000;
+    setShippingFee(shipping);
+    setPrice(total + shipping);
 
     // 로그인 사용자 정보 자동 입력
     if (token) {
@@ -79,7 +83,9 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (data.valid) {
         setCouponApplied({ couponCode: data.couponCode, discountAmount: data.discountAmount });
-        setPrice(total - data.discountAmount);
+        const shipping = total >= 50000 ? 0 : 3000;
+        setShippingFee(shipping);
+        setPrice(total - data.discountAmount + shipping);
       } else {
         alert(data.message || '유효하지 않은 쿠폰입니다.');
       }
@@ -93,7 +99,10 @@ export default function CheckoutPage() {
   const removeCoupon = () => {
     setCouponApplied(null);
     setCouponCode('');
-    setPrice(getTotal());
+    const total = getTotal();
+    const shipping = total >= 50000 ? 0 : 3000;
+    setShippingFee(shipping);
+    setPrice(total + shipping);
   };
 
   const handlePayment = async () => {
@@ -138,7 +147,7 @@ export default function CheckoutPage() {
         await widget.renderPaymentMethods('#toss-payment-widget', { value: price });
 
         // 토스 결제 요청 → 성공 시 /success?paymentKey=...&orderId=...&amount=... 로 리다이렉트
-        clearCart();
+        // clearCart는 success 페이지에서 처리 (결제 실패 시 장바구니 유지)
         await widget.requestPayment({
           orderId,
           orderName: items.length > 1 ? `${items[0].name} 외 ${items.length - 1}건` : items[0].name,
@@ -251,8 +260,9 @@ export default function CheckoutPage() {
       <div className="bg-blue-50/50 p-5 md:p-8 rounded-2xl md:rounded-3xl border border-blue-100 mb-6 flex justify-between items-end">
         <div>
           <span className="text-gray-600 text-sm md:text-base font-bold block">최종 결제금액</span>
+          <span className="text-xs text-gray-500">배송비 {shippingFee === 0 ? '무료' : `+${shippingFee.toLocaleString()}원`}</span>
           {couponApplied && (
-            <span className="text-xs text-green-600">쿠폰 -{couponApplied.discountAmount.toLocaleString()}원 적용됨</span>
+            <span className="text-xs text-green-600 ml-2">쿠폰 -{couponApplied.discountAmount.toLocaleString()}원 적용됨</span>
           )}
         </div>
         <span className="text-3xl md:text-4xl text-blue-600 font-extrabold tracking-tighter">

@@ -33,25 +33,98 @@ const router = Router();
 
 router.get('/dashboard', authenticate, requireAdmin, async (_req: AuthRequest, res: Response) => {
     try {
-        const [paidCount, pendingCount, shippingCount, completedCount, cancelledCount, totalRevenue] = await Promise.all([
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const weekStart = new Date(todayStart); weekStart.setDate(weekStart.getDate() - 7);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const paidStatuses = ['PAID', 'SHIPPING', 'COMPLETED'];
+
+        const [paidCount, pendingCount, shippingCount, completedCount, cancelledCount,
+               totalRevenue, todayRevenue, weekRevenue, monthRevenue,
+               todayOrders, recentOrders, topItems] = await Promise.all([
             prisma.order.count({ where: { status: 'PAID' } }),
             prisma.order.count({ where: { status: 'PENDING' } }),
             prisma.order.count({ where: { status: 'SHIPPING' } }),
             prisma.order.count({ where: { status: 'COMPLETED' } }),
             prisma.order.count({ where: { status: 'CANCELLED' } }),
-            prisma.order.aggregate({ where: { status: { in: ['PAID', 'SHIPPING', 'COMPLETED'] } }, _sum: { finalAmount: true } })
+            prisma.order.aggregate({ where: { status: { in: paidStatuses } }, _sum: { finalAmount: true } }),
+            prisma.order.aggregate({ where: { status: { in: paidStatuses }, createdAt: { gte: todayStart } }, _sum: { finalAmount: true } }),
+            prisma.order.aggregate({ where: { status: { in: paidStatuses }, createdAt: { gte: weekStart } }, _sum: { finalAmount: true } }),
+            prisma.order.aggregate({ where: { status: { in: paidStatuses }, createdAt: { gte: monthStart } }, _sum: { finalAmount: true } }),
+            prisma.order.count({ where: { createdAt: { gte: todayStart } } }),
+            prisma.order.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true } }, items: { include: { product: { select: { name: true } } } } } }),
+            prisma.orderItem.groupBy({ by: ['productId'], _sum: { quantity: true, price: true }, orderBy: { _sum: { quantity: 'desc' } }, take: 5 }),
         ]);
 
+        // TOP5 상품명 조회
+        const topProductIds = topItems.map((t: any) => t.productId);
+        const topProducts = await prisma.product.findMany({ where: { id: { in: topProductIds } }, select: { id: true, name: true } });
+        const topProductMap = Object.fromEntries(topProducts.map(p => [p.id, p.name]));
+
+        // 최근 7일 매출 추이
+        const dailySales = [];
+        for (let i = 6; i >= 0; i--) {
+            const dayStart = new Date(todayStart); dayStart.setDate(dayStart.getDate() - i);
+            const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
+            const daySales = await prisma.order.aggregate({
+                where: { status: { in: paidStatuses }, createdAt: { gte: dayStart, lt: dayEnd } },
+                _sum: { finalAmount: true }, _count: true
+            });
+            dailySales.push({
+                date: dayStart.toISOString().slice(5, 10),
+                revenue: daySales._sum.finalAmount ?? 0,
+                orders: daySales._count ?? 0,
+            });
+        }
+
         res.json({
-            paid: paidCount,
-            pending: pendingCount,
-            shipping: shippingCount,
-            completed: completedCount,
-            cancelled: cancelledCount,
-            totalRevenue: totalRevenue._sum.finalAmount ?? 0
+            paid: paidCount, pending: pendingCount, shipping: shippingCount,
+            completed: completedCount, cancelled: cancelledCount,
+            totalRevenue: totalRevenue._sum.finalAmount ?? 0,
+            todayRevenue: todayRevenue._sum.finalAmount ?? 0,
+            weekRevenue: weekRevenue._sum.finalAmount ?? 0,
+            monthRevenue: monthRevenue._sum.finalAmount ?? 0,
+            todayOrders,
+            recentOrders: recentOrders.map((o: any) => ({
+                id: o.id, status: o.status, finalAmount: o.finalAmount, createdAt: o.createdAt,
+                customerName: o.user?.name || o.guestName || '비회원',
+                productSummary: o.items?.[0]?.product?.name + (o.items.length > 1 ? ` 외 ${o.items.length - 1}건` : ''),
+            })),
+            topProducts: topItems.map((t: any) => ({
+                productId: t.productId, name: topProductMap[t.productId] || '삭제된 상품',
+                totalQty: t._sum.quantity, totalRevenue: t._sum.price,
+            })),
+            dailySales,
         });
     } catch (error) {
+        console.error('[Dashboard]', error);
         res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+});
+
+// ─── 주문 CSV 다운로드 ──────────────────────────────────────────────────────
+
+router.get('/orders/csv', authenticate, requireAdmin, async (_req: AuthRequest, res: Response) => {
+    try {
+        const orders = await prisma.order.findMany({
+            include: { user: { select: { name: true, email: true } }, items: { include: { product: { select: { name: true } } } } },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const BOM = '\uFEFF';
+        const header = '주문일시,주문번호,주문자,이메일,상품명,수량,결제금액,결제상태\n';
+        const rows = orders.map((o: any) => {
+            const productName = o.items.map((i: any) => `${i.product?.name || ''}(${i.quantity}개)`).join(' / ');
+            const totalQty = o.items.reduce((s: number, i: any) => s + i.quantity, 0);
+            const date = new Date(o.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+            return `"${date}","${o.id}","${o.user?.name || o.guestName || '비회원'}","${o.user?.email || o.guestEmail || ''}","${productName}",${totalQty},${o.finalAmount},"${o.status}"`;
+        }).join('\n');
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=orders_${new Date().toISOString().slice(0, 10)}.csv`);
+        res.send(BOM + header + rows);
+    } catch (error) {
+        res.status(500).json({ error: 'CSV 생성 실패' });
     }
 });
 
