@@ -6,7 +6,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean | 'slow'>(false);
   const [shake, setShake] = useState(false);
 
   const showError = (msg: string) => {
@@ -24,12 +24,15 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
+    // 서버 슬립 시 최대 60초 대기
+    const slowTimer = setTimeout(() => setIsLoading('slow'), 5000);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password }),
       });
+      clearTimeout(slowTimer);
 
       const data = await res.json();
 
@@ -54,6 +57,7 @@ export default function LoginPage() {
       const redirect = params.get('redirect') || (data.role === 'ADMIN' ? '/admin' : '/');
       window.location.href = redirect;
     } catch {
+      clearTimeout(slowTimer);
       setIsLoading(false);
       showError('현재 로그인 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
     }
@@ -111,10 +115,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={!!isLoading}
           className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl mt-2 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-wait transition shadow-[0_4px_14px_0_rgba(37,99,235,0.39)]"
         >
-          {isLoading ? '로그인 중...' : '로그인'}
+          {isLoading === 'slow' ? '서버 준비 중... (최대 30초)' : isLoading ? '로그인 중...' : '로그인'}
         </button>
 
         <div className="text-center mt-4 text-sm text-gray-500">
