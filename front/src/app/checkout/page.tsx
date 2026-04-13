@@ -139,7 +139,7 @@ export default function CheckoutPage() {
         window.location.href = `/order-complete?orderId=${orderId}&amount=${price}&method=bank`;
       } else {
         // 카드/간편결제: 토스페이먼츠 SDK
-        const clientKey = 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
+        const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
         const { loadPaymentWidget } = await import('@tosspayments/payment-widget-sdk');
         const widget = await loadPaymentWidget(clientKey, 'ANONYMOUS');
 

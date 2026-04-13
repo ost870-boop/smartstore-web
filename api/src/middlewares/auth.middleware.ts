@@ -13,7 +13,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey') as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'smartstore_secret') as any;
         req.user = decoded;
         next();
     } catch (e) {
@@ -29,7 +29,7 @@ export const optionalAuthenticate = (req: AuthRequest, res: Response, next: Next
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey') as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'smartstore_secret') as any;
         req.user = decoded;
         next();
     } catch (e) {

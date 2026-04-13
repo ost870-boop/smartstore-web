@@ -35,7 +35,7 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign(
             { id: user.id, role: user.role }, 
-            process.env.JWT_SECRET || 'supersecretjwtkey', 
+            process.env.JWT_SECRET || 'smartstore_secret', 
             { expiresIn: '1d' }
         );
         res.json({ token, role: user.role });
@@ -51,7 +51,7 @@ router.get('/me', async (req, res) => {
 
     try {
         const token = authHeader.replace('Bearer ', '');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey') as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'smartstore_secret') as any;
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
             select: { id: true, name: true, email: true, phone: true, address: true, role: true }

@@ -7,9 +7,10 @@ import { Clock, ShoppingCart, Trash2 } from 'lucide-react';
 export default function RecentPage() {
     const { items, clearRecent } = useRecentStore();
     const addItem = useCartStore(s => s.addItem);
-    const _hasHydrated = useCartStore(s => s._hasHydrated);
+    const recentHydrated = useRecentStore(s => s._hasHydrated);
+    const cartHydrated = useCartStore(s => s._hasHydrated);
 
-    if (!_hasHydrated) return null;
+    if (!recentHydrated || !cartHydrated) return null;
 
     const handleAddToCart = (item: any) => {
         addItem({

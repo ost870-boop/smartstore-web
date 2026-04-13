@@ -7,9 +7,10 @@ import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
 export default function WishlistPage() {
     const { items, toggleItem } = useWishStore();
     const addItem = useCartStore(s => s.addItem);
-    const _hasHydrated = useCartStore(s => s._hasHydrated);
+    const wishHydrated = useWishStore(s => s._hasHydrated);
+    const cartHydrated = useCartStore(s => s._hasHydrated);
 
-    if (!_hasHydrated) return null;
+    if (!wishHydrated || !cartHydrated) return null;
 
     const handleAddToCart = (item: any) => {
         addItem({
