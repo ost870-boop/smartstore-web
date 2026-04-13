@@ -80,13 +80,23 @@ const tools: Anthropic.Tool[] = [
     }
 ];
 
-router.post('/', async (req: any, res: Response) => {
+// 챗봇 rate limiting: IP당 분당 10회
+import rateLimit from 'express-rate-limit';
+const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: { error: '채팅 요청이 너무 많습니다.' } });
+
+router.post('/', chatLimiter, async (req: any, res: Response) => {
     const { messages } = req.body;
 
-    if (!messages || !Array.isArray(messages)) {
-        res.status(400).json({ error: '메시지가 필요합니다.' });
+    if (!messages || !Array.isArray(messages) || messages.length > 30) {
+        res.status(400).json({ error: '메시지가 올바르지 않습니다.' });
         return;
     }
+
+    // 메시지 길이 제한 (프롬프트 인젝션 경감)
+    const sanitizedMessages = messages.map((m: any) => ({
+        role: (m.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: typeof m.content === 'string' ? m.content.substring(0, 3000) : '',
+    })).filter((m: any) => m.content.length > 0);
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -98,7 +108,7 @@ router.post('/', async (req: any, res: Response) => {
         const client = new Anthropic({ apiKey });
 
         // Agentic loop: 도구 호출이 있으면 실행 후 재요청
-        let currentMessages = [...messages];
+        let currentMessages = [...sanitizedMessages];
         let maxIterations = 5;
 
         while (maxIterations > 0) {

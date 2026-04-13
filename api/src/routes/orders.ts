@@ -115,16 +115,19 @@ router.post('/:id/pay', optionalAuthenticate, async (req: AuthRequest, res: Resp
         if (!order) { res.status(404).json({ error: '주문을 찾을 수 없습니다.' }); return; }
         if (order.status !== 'PENDING') { res.status(400).json({ error: '이미 처리된 주문입니다.' }); return; }
 
-        await prisma.order.update({ where: { id: String(id) }, data: { status: 'PAID' } });
-
-        // 재고 차감
-        for (const item of order.items) {
-            if (item.optionId) {
-                await prisma.productOption.update({ where: { id: item.optionId }, data: { stock: { decrement: item.quantity } } }).catch(() => {});
-            } else {
-                await prisma.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } }).catch(() => {});
+        // 트랜잭션으로 결제 + 재고 차감을 원자적으로 처리
+        await prisma.$transaction(async (tx) => {
+            await tx.order.update({ where: { id: String(id) }, data: { status: 'PAID' } });
+            for (const item of order.items) {
+                if (item.optionId) {
+                    const opt = await tx.productOption.update({ where: { id: item.optionId }, data: { stock: { decrement: item.quantity } } });
+                    if (opt.stock < 0) throw new Error('재고 부족');
+                } else {
+                    const prod = await tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } });
+                    if (prod.stock < 0) throw new Error('재고 부족');
+                }
             }
-        }
+        });
 
         res.json({ message: '결제가 완료되었습니다.', orderId: id });
     } catch (error) {

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
@@ -18,15 +20,34 @@ dotenv.config();
 const app = express();
 export const prisma = new PrismaClient();
 
+// ─── 보안 헤더 (XSS, clickjacking, MIME sniffing 방지) ──────────
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // 이미지 서빙용
+    contentSecurityPolicy: false, // API 서버이므로 CSP 불필요
+}));
+
+// ─── CORS (허용 도메인만) ────────────────────────────────────────
+const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').filter(Boolean);
 app.use(cors({
-    origin: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : true,
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
     credentials: true
 }));
-app.use(express.json());
+
+// ─── 전역 Rate Limiting (IP당 분당 100회) ───────────────────────
+app.use(rateLimit({
+    windowMs: 60 * 1000,
+    max: 100,
+    message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+}));
+
+app.use(express.json({ limit: '10mb' }));
 
 // 업로드 이미지 정적 서빙
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+// ─── 라우트 ──────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
