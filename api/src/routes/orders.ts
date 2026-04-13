@@ -1,12 +1,19 @@
 import { Router, Response } from 'express';
 import { prisma } from '../index';
 import { authenticate, optionalAuthenticate, AuthRequest } from '../middlewares/auth.middleware';
-import axios from 'axios';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
+// 주문 생성 rate limit: IP당 1시간에 20회 (게스트 주문 남용 방지)
+const orderLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 20,
+    message: { error: '주문 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+});
+
 // POST /api/orders - 주문 생성
-router.post('/', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
+router.post('/', orderLimiter, optionalAuthenticate, async (req: AuthRequest, res: Response) => {
     const { items, couponCode, shippingAddress, guestName, guestPhone, guestEmail } = req.body;
 
     try {
@@ -114,6 +121,8 @@ router.post('/:id/pay', optionalAuthenticate, async (req: AuthRequest, res: Resp
         const order = await prisma.order.findUnique({ where: { id: String(id) }, include: { items: true } });
         if (!order) { res.status(404).json({ error: '주문을 찾을 수 없습니다.' }); return; }
         if (order.status !== 'PENDING') { res.status(400).json({ error: '이미 처리된 주문입니다.' }); return; }
+        // 소유권 검증: 로그인 사용자는 자기 주문만 결제 가능
+        if (req.user && order.userId !== req.user.id) { res.status(403).json({ error: '권한이 없습니다.' }); return; }
 
         // 트랜잭션으로 결제 + 재고 차감을 원자적으로 처리
         await prisma.$transaction(async (tx) => {
@@ -146,16 +155,17 @@ router.post('/confirm', optionalAuthenticate, async (req: AuthRequest, res: Resp
         if (order.finalAmount !== amount) { res.status(400).json({ message: '결제 금액이 일치하지 않습니다.' }); return; }
         if (order.status !== 'PENDING') { res.status(400).json({ message: '이미 처리된 주문입니다.' }); return; }
 
-        const secretKey = process.env.TOSS_SECRET_KEY || 'test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R';
+        const secretKey = process.env.TOSS_SECRET_KEY;
+        if (!secretKey) { res.status(500).json({ message: '결제 설정이 되지 않았습니다.' }); return; }
         const encryptedSecretKey = Buffer.from(`${secretKey}:`).toString('base64');
 
-        const response = await axios.post('https://api.tosspayments.com/v1/payments/confirm', {
-            paymentKey, orderId, amount
-        }, {
-            headers: { Authorization: `Basic ${encryptedSecretKey}`, 'Content-Type': 'application/json' }
+        const tossRes = await fetch('https://api.tosspayments.com/v1/payments/confirm', {
+            method: 'POST',
+            headers: { Authorization: `Basic ${encryptedSecretKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentKey, orderId, amount }),
         });
 
-        if (response.status === 200) {
+        if (tossRes.ok) {
             await prisma.order.update({ where: { id: order.id }, data: { status: 'PAID', paymentKey } });
 
             for (const item of order.items) {
@@ -169,7 +179,7 @@ router.post('/confirm', optionalAuthenticate, async (req: AuthRequest, res: Resp
             res.json({ message: '결제가 완료되었습니다.' });
         }
     } catch (error: any) {
-        console.error('Payment Error:', error?.response?.data || error.message);
+        console.error('Payment Error:', error?.message);
         await prisma.order.update({ where: { id: orderId }, data: { status: 'FAILED' } }).catch(() => {});
         res.status(400).json({ error: '결제 처리에 실패했습니다.' });
     }

@@ -52,9 +52,10 @@ export default function LoginPage() {
       Cookies.set('token', data.token, { expires: 1 });
       Cookies.set('role', data.role, { expires: 1 });
 
-      // 리다이렉트
+      // 리다이렉트 (외부 URL 차단 — 내부 경로만 허용)
       const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect') || (data.role === 'ADMIN' ? '/admin' : '/');
+      const raw = params.get('redirect') || (data.role === 'ADMIN' ? '/admin' : '/');
+      const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
       window.location.href = redirect;
     } catch {
       clearTimeout(slowTimer);

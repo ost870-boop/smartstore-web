@@ -11,6 +11,7 @@
   "dependencies": {
     "@tosspayments/payment-widget-sdk": "^0.12.1",
     "axios": "^1.14.0",
+    "jose": "^6.2.2",
     "js-cookie": "^3.0.5",
     "localtunnel": "^2.0.2",
     "lucide-react": "^1.7.0",
