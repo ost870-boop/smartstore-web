@@ -7,7 +7,7 @@ import { Heart, ShoppingCart, Zap, Package } from 'lucide-react';
 import Link from 'next/link';
 import { BlockRenderer } from '@/components/BlockEditor';
 
-export default function ProductDetailClient({ product }: { product: any }) {
+export default function ProductDetailClient({ product, relatedProducts = [] }: { product: any; relatedProducts?: any[] }) {
     const addItem = useCartStore(s => s.addItem);
     const cartHydrated = useCartStore(s => s._hasHydrated);
     const wishHydrated = useWishStore(s => s._hasHydrated);
@@ -345,6 +345,27 @@ export default function ProductDetailClient({ product }: { product: any }) {
                     </div>
                 )}
             </div>
+
+            {/* 관련 상품 (같은 카테고리) */}
+            {relatedProducts.length > 0 && (
+                <div className="mt-10 border-t pt-8">
+                    <h3 className="font-bold text-gray-900 mb-4">함께 많이 보는 상품</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {relatedProducts.map((r: any) => (
+                            <Link key={r.id} href={`/products/${r.id}`} className="group block">
+                                <div className="aspect-square bg-gray-50 rounded-xl border border-gray-100 overflow-hidden mb-2">
+                                    {r.imageUrl
+                                        ? <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-500" />
+                                        : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">No img</div>
+                                    }
+                                </div>
+                                <p className="text-xs text-gray-700 font-medium line-clamp-2 leading-snug group-hover:text-blue-600">{r.name}</p>
+                                <p className="text-sm font-bold text-gray-900 mt-1">{r.price?.toLocaleString()}원</p>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* 최근 본 상품 */}
             {relatedRecent.length > 0 && (
