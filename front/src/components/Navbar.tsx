@@ -103,7 +103,10 @@ export default function Navbar() {
             </Link>
 
             {isLogged ? (
-               <button onClick={handleLogout} className="opacity-90">로그아웃</button>
+               <>
+                 <Link href="/mypage" className="opacity-90 hover:opacity-100 hidden md:inline">마이페이지</Link>
+                 <button onClick={handleLogout} className="opacity-90">로그아웃</button>
+               </>
             ) : (
                <Link href="/login" className="opacity-90 flex items-center gap-1">
                   <User size={16} className="md:hidden" />

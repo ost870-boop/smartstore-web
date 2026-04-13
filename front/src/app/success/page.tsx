@@ -1,14 +1,12 @@
 "use client";
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import axios from 'axios';
+import { useSearchParams } from 'next/navigation';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const paymentKey = searchParams.get('paymentKey');
   const orderId = searchParams.get('orderId');
   const amount = searchParams.get('amount');
@@ -24,13 +22,15 @@ function SuccessContent() {
     const confirmPayment = async () => {
       try {
         const token = Cookies.get('token');
-        await axios.post('/api/orders/confirm', {
-          paymentKey, orderId, amount: Number(amount)
-        }, { headers: { Authorization: `Bearer ${token}` } });
-        
+        const res = await fetch('/api/orders/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
+        });
+        if (!res.ok) throw new Error();
         setStatus('success');
         clearCart();
-      } catch (e) {
+      } catch {
         setStatus('error');
       }
     };

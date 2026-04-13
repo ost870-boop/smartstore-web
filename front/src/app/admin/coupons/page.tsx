@@ -1,9 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import Cookies from 'js-cookie';
-
-const API = ''; // 상대경로 → Next.js rewrite → localhost:5000
 
 interface Coupon {
   id: string;
@@ -24,12 +21,13 @@ export default function AdminCouponsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const headers = { Authorization: `Bearer ${Cookies.get('token')}` };
+  const token = Cookies.get('token');
+  const hdrs: Record<string, string> = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   const fetchCoupons = async () => {
     try {
-      const res = await axios.get(`${API}/api/admin/coupons`, { headers });
-      setCoupons(res.data);
+      const res = await fetch('/api/admin/coupons', { headers: hdrs });
+      if (res.ok) setCoupons(await res.json());
     } catch { alert('쿠폰 목록 불러오기 실패'); }
   };
 
@@ -39,18 +37,15 @@ export default function AdminCouponsPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (editId) {
-        await axios.put(`${API}/api/admin/coupons/${editId}`, form, { headers });
-        alert('쿠폰이 수정되었습니다.');
-      } else {
-        await axios.post(`${API}/api/admin/coupons`, form, { headers });
-        alert('쿠폰이 생성되었습니다.');
-      }
+      const url = editId ? `/api/admin/coupons/${editId}` : '/api/admin/coupons';
+      const res = await fetch(url, { method: editId ? 'PUT' : 'POST', headers: hdrs, body: JSON.stringify(form) });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      alert(editId ? '쿠폰이 수정되었습니다.' : '쿠폰이 생성되었습니다.');
       setForm({ ...emptyForm });
       setEditId(null);
       fetchCoupons();
     } catch (err: any) {
-      alert(err.response?.data?.error || '저장 실패');
+      alert(err.message || '저장 실패');
     } finally {
       setLoading(false);
     }
@@ -71,7 +66,7 @@ export default function AdminCouponsPage() {
   const handleDelete = async (id: string, code: string) => {
     if (!confirm(`쿠폰 "${code}"을 삭제하시겠습니까?`)) return;
     try {
-      await axios.delete(`${API}/api/admin/coupons/${id}`, { headers });
+      await fetch(`/api/admin/coupons/${id}`, { method: 'DELETE', headers: hdrs });
       fetchCoupons();
     } catch { alert('삭제 실패'); }
   };

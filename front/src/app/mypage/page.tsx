@@ -2,20 +2,20 @@
 import { useEffect, useState } from 'react';
 import { ShoppingBag, Heart, FileText, Ticket, Clock } from 'lucide-react';
 import Cookies from 'js-cookie';
-import axios from 'axios';
 import Link from 'next/link';
 
 export default function MyPage() {
     const [orders, setOrders] = useState([]);
-    
+
     useEffect(() => {
         const token = Cookies.get('token');
         if (!token) {
             window.location.href = '/login?redirect=/mypage';
             return;
         }
-        axios.get('/api/orders/my', { headers: { Authorization: `Bearer ${token}` } })
-           .then(res => setOrders(res.data))
+        fetch('/api/orders/my', { headers: { Authorization: `Bearer ${token}` } })
+           .then(res => res.ok ? res.json() : [])
+           .then(data => setOrders(data))
            .catch(console.error);
     }, []);
     const statusCount = (s: string) => orders.filter((o: any) => o.status === s).length;

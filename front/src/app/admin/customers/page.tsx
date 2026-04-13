@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Star, Trash2 } from 'lucide-react';
 
@@ -11,16 +10,16 @@ export default function AdminCustomersPage() {
     const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
     const [tab, setTab] = useState<'reviews' | 'qnas'>('qnas');
     const token = Cookies.get('token');
-    const headers = { Authorization: `Bearer ${token}` };
+    const hdrs: Record<string, string> = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     const fetchData = async () => {
         try {
             const [revRes, qnaRes] = await Promise.all([
-                axios.get('/api/admin/reviews', { headers }),
-                axios.get('/api/admin/qnas', { headers }),
+                fetch('/api/admin/reviews', { headers: hdrs }).then(r => r.json()),
+                fetch('/api/admin/qnas', { headers: hdrs }).then(r => r.json()),
             ]);
-            setReviews(revRes.data);
-            setQnas(qnaRes.data);
+            setReviews(revRes);
+            setQnas(qnaRes);
         } catch (e) { console.error(e); }
     };
 
@@ -30,7 +29,7 @@ export default function AdminCustomersPage() {
         const reply = replyInputs[qnaId]?.trim();
         if (!reply) return alert('답변 내용을 입력해주세요.');
         try {
-            await axios.put(`/api/admin/qnas/${qnaId}/reply`, { reply }, { headers });
+            await fetch(`/api/admin/qnas/${qnaId}/reply`, { method: 'PUT', headers: hdrs, body: JSON.stringify({ reply }) });
             setReplyInputs((prev: Record<string, string>) => ({ ...prev, [qnaId]: '' }));
             fetchData();
         } catch { alert('답변 등록 실패'); }
@@ -39,7 +38,7 @@ export default function AdminCustomersPage() {
     const handleDeleteReview = async (id: string) => {
         if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`/api/admin/reviews/${id}`, { headers });
+            await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE', headers: hdrs });
             fetchData();
         } catch { alert('삭제 실패'); }
     };
@@ -47,7 +46,7 @@ export default function AdminCustomersPage() {
     const handleDeleteQna = async (id: string) => {
         if (!confirm('이 문의를 삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`/api/admin/qnas/${id}`, { headers });
+            await fetch(`/api/admin/qnas/${id}`, { method: 'DELETE', headers: hdrs });
             fetchData();
         } catch { alert('삭제 실패'); }
     };

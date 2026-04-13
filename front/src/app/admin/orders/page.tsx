@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Search } from 'lucide-react';
 
@@ -20,26 +19,20 @@ export default function AdminOrdersPage() {
     const [statusFilter, setStatusFilter] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const token = Cookies.get('token');
+    const hdrs = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
     const fetchOrders = async () => {
         try {
-            const res = await axios.get('/api/admin/orders', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setOrders(res.data);
-        } catch (error) {
-            console.error(error);
-        }
+            const res = await fetch('/api/admin/orders', { headers: hdrs });
+            if (res.ok) setOrders(await res.json());
+        } catch (error) { console.error(error); }
     };
 
     useEffect(() => { fetchOrders(); }, []);
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         try {
-            await axios.put(`/api/admin/orders/${orderId}`,
-                { status: newStatus },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await fetch(`/api/admin/orders/${orderId}`, { method: 'PUT', headers: hdrs, body: JSON.stringify({ status: newStatus }) });
             fetchOrders();
         } catch { alert('상태 변경 실패'); }
     };
@@ -48,10 +41,7 @@ export default function AdminOrdersPage() {
         const tr = trackingInput[orderId];
         if (!tr) return alert('송장번호를 입력해주세요');
         try {
-            await axios.put(`/api/admin/orders/${orderId}`,
-                { status: 'SHIPPING', trackingNumber: tr },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await fetch(`/api/admin/orders/${orderId}`, { method: 'PUT', headers: hdrs, body: JSON.stringify({ status: 'SHIPPING', trackingNumber: tr }) });
             fetchOrders();
         } catch { alert('처리 실패'); }
     };

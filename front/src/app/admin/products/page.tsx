@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Plus, Edit, Trash2, X, Eye } from 'lucide-react';
 import Cookies from 'js-cookie';
 import BlockEditor, { Block, BlockRenderer } from '@/components/BlockEditor';
@@ -21,18 +20,21 @@ export default function AdminProductsPage() {
     const defaultForm = { name: '', price: 0, originalPrice: 0, stock: 100, categoryId: '', description: '-', brand: '', material: '', usage: '', isBoxRate: false, boxQuantity: 0, bulkPrice: 0 };
     const [formData, setFormData] = useState(defaultForm);
 
+    const token = Cookies.get('token');
+    const hdrs: Record<string, string> = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
     const fetchProducts = () => {
-        axios.get('/api/products').then(res => setProducts(res.data)).catch(console.error);
+        fetch('/api/products').then(r => r.json()).then(setProducts).catch(console.error);
     };
     useEffect(() => {
         fetchProducts();
-        axios.get('/api/categories').then(res => setCategories(res.data)).catch(console.error);
+        fetch('/api/categories').then(r => r.json()).then(setCategories).catch(console.error);
     }, []);
 
     const handleDelete = async (id: string) => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
         try {
-            await axios.delete(`/api/products/${id}`, { headers: { Authorization: `Bearer ${Cookies.get('token')}` } });
+            await fetch(`/api/products/${id}`, { method: 'DELETE', headers: hdrs });
             setProducts(products.filter(p => p.id !== id));
         } catch { alert('삭제 실패'); }
     };
@@ -40,7 +42,6 @@ export default function AdminProductsPage() {
     const handleSave = async () => {
         if (!formData.name.trim()) { alert('상품명을 입력해주세요.'); setTab('basic'); return; }
         try {
-            const config = { headers: { Authorization: `Bearer ${Cookies.get('token')}` } };
             const imagesText = detailUrls.join(',');
             const payload = {
                 ...formData,
@@ -53,11 +54,8 @@ export default function AdminProductsPage() {
                 boxQuantity: formData.boxQuantity || undefined,
                 bulkPrice: formData.bulkPrice || undefined,
             };
-            if (editItem) {
-                await axios.put(`/api/products/${editItem.id}`, payload, config);
-            } else {
-                await axios.post('/api/products', payload, config);
-            }
+            const url = editItem ? `/api/products/${editItem.id}` : '/api/products';
+            await fetch(url, { method: editItem ? 'PUT' : 'POST', headers: hdrs, body: JSON.stringify(payload) });
             setIsModalOpen(false);
             fetchProducts();
         } catch { alert('저장 실패'); }
