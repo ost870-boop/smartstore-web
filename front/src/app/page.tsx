@@ -1,37 +1,62 @@
+"use client";
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import HomePageContent from './HomePageContent';
+import { Suspense } from 'react';
 
-async function getProducts(queryStr: string) {
-  try {
-    const API_URL = process.env.INTERNAL_API_URL || 'https://smartstore-api-w2s7.onrender.com';
-    const res = await fetch(`${API_URL}/api/products?${queryStr}`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    return res.json();
-  } catch { return []; }
-}
+function HomeInner() {
+  const searchParams = useSearchParams();
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-async function getCategories() {
-  try {
-    const API_URL = process.env.INTERNAL_API_URL || 'https://smartstore-api-w2s7.onrender.com';
-    const res = await fetch(`${API_URL}/api/categories`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    return res.json();
-  } catch { return []; }
-}
+  const params = {
+    category: searchParams.get('category') || undefined,
+    sort: searchParams.get('sort') || undefined,
+    search: searchParams.get('search') || undefined,
+    material: searchParams.get('material') || undefined,
+    usage: searchParams.get('usage') || undefined,
+    brand: searchParams.get('brand') || undefined,
+  };
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ category?: string; sort?: string; search?: string; material?: string; usage?: string; brand?: string }> }) {
-  const params = await searchParams;
-  const query = new URLSearchParams();
-  if (params.category) query.append('categoryId', params.category);
-  if (params.sort) query.append('sort', params.sort);
-  if (params.search) query.append('search', params.search);
-  if (params.material) query.append('material', params.material);
-  if (params.usage) query.append('usage', params.usage);
-  if (params.brand) query.append('brand', params.brand);
+  useEffect(() => {
+    const query = new URLSearchParams();
+    if (params.category) query.append('categoryId', params.category);
+    if (params.sort) query.append('sort', params.sort);
+    if (params.search) query.append('search', params.search);
+    if (params.material) query.append('material', params.material);
+    if (params.usage) query.append('usage', params.usage);
+    if (params.brand) query.append('brand', params.brand);
 
-  const [products, categories] = await Promise.all([
-    getProducts(query.toString()),
-    getCategories()
-  ]);
+    Promise.all([
+      fetch(`/api/products?${query.toString()}`).then(r => r.ok ? r.json() : []),
+      fetch('/api/categories').then(r => r.ok ? r.json() : []),
+    ])
+      .then(([p, c]) => { setProducts(p); setCategories(c); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [searchParams]);
+
+  if (loading) {
+    return (
+      <div className="max-w-[1280px] mx-auto px-4 py-12">
+        <div className="animate-pulse space-y-6">
+          <div className="h-[220px] md:h-[380px] bg-gray-200 rounded-2xl" />
+          <div className="flex gap-2">{[1,2,3,4,5].map(i => <div key={i} className="h-10 w-24 bg-gray-200 rounded-full" />)}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[1,2,3,4].map(i => <div key={i} className="h-64 bg-gray-100 rounded-xl" />)}</div>
+        </div>
+        <p className="text-center text-gray-400 mt-8 text-sm">상품을 불러오는 중... (첫 접속 시 30초 정도 걸릴 수 있습니다)</p>
+      </div>
+    );
+  }
 
   return <HomePageContent initialProducts={products} initialCategories={categories} params={params} />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="text-center py-20 text-gray-400">로딩중...</div>}>
+      <HomeInner />
+    </Suspense>
+  );
 }
