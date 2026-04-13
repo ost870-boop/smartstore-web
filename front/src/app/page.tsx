@@ -2,7 +2,7 @@ import HomePageContent from './HomePageContent';
 
 async function getProducts(queryStr: string) {
   try {
-    const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+    const API_URL = process.env.INTERNAL_API_URL || 'https://smartstore-api-w2s7.onrender.com';
     const res = await fetch(`${API_URL}/api/products?${queryStr}`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
@@ -11,7 +11,7 @@ async function getProducts(queryStr: string) {
 
 async function getCategories() {
   try {
-    const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+    const API_URL = process.env.INTERNAL_API_URL || 'https://smartstore-api-w2s7.onrender.com';
     const res = await fetch(`${API_URL}/api/categories`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
