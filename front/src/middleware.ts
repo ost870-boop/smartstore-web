@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'smartstore_secret');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'smartstore_secret_jwt_key_super_secure');
 
 async function verifyToken(token: string): Promise<{ role: string } | null> {
     try {
